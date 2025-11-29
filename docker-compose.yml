@@ -1,41 +1,43 @@
 services:  
   integration-service:  
-    build: .  
+    build:   
+      context: ./integration_service  
+      dockerfile: Dockerfile  
+    container_name: neurograph-ai-assistant-integration-service  
     ports:  
       - "${API_PORT:-9000}:9000"  
     environment:  
       - API_PORT=${API_PORT:-9000}  
-      - ATOMSPACE_API_URL=${ATOMSPACE_API_URL:-http://atomspace-api:8000}  
-      - NEURAL_MINER_URL=${NEURAL_MINER_URL:-http://neural-miner:5000}  
-      # - ANNOTATION_SERVICE_URL=${ANNOTATION_SERVICE_URL:-http://annotation-service:6000}  
+      - ATOMSPACE_API_URL=http://atomspace-api-dev:8000  # Updated to use dev container  
+      - NEURAL_MINER_URL=http://neural-miner:5000  
+      - ANNOTATION_SERVICE_URL=${ANNOTATION_SERVICE_URL:-http://annotation-service:6000}  
       - ATOMSPACE_TIMEOUT=${ATOMSPACE_TIMEOUT:-600}  
       - MINER_TIMEOUT=${MINER_TIMEOUT:-1800}  
-      # - ANNOTATION_TIMEOUT=${ANNOTATION_TIMEOUT:-300}  
+      - ANNOTATION_TIMEOUT=${ANNOTATION_TIMEOUT:-300}  
+      - CSV_CACHE_DIR=${CSV_CACHE_DIR:-./cache}  
+      - SHARED_VOLUME_PATH=${SHARED_VOLUME_PATH:-/shared/output}  
     volumes:  
       - shared_output:/shared/output  
       - csv_cache:/tmp/csv_cache  
     networks:  
-      - integration-network  
+      - atomspace-network  # Join existing network  
     restart: always  
-  
-  atomspace-api:  
-    image: abdum1964/atomspace-api:latest  
-    volumes:  
-      - shared_output:/shared/output  
-    networks:  
-      - integration-network  
   
   neural-miner:  
     build: ./submodules/neural-subgraph-matcher-miner  
+    container_name: neurograph-ai-assistant-neural-miner  
     volumes:  
       - shared_output:/shared/output  
     networks:  
-      - integration-network  
+      - atomspace-network   
+    restart: always    
   
 volumes:  
   shared_output:  
   csv_cache:  
   
 networks:  
+  atomspace-network:  
+    external: true  
   integration-network:  
     driver: bridge
