@@ -1,6 +1,7 @@
 """Pipeline API endpoints."""  
 import os  
 import tempfile  
+from typing import List  
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException  
 from ..services.orchestration_service import OrchestrationService  
 from ..config.settings import settings  
@@ -9,36 +10,46 @@ router = APIRouter()
 orchestration_service = OrchestrationService()  
   
 @router.post("/execute")  
+@router.post("/execute")  
 async def execute_pipeline(  
-    file: UploadFile = File(...),  
+    files: List[UploadFile] = File(...),  
     config: str = Form(...),  
     schema_json: str = Form(...),  
-    tenant_id: str = Form("default"),  
-    session_id: str = Form(None)  
+    writer_type: str = Form("networkx")  # Add this parameter  
 ):  
     """Execute complete pipeline: CSV → NetworkX → Miner."""  
-    if not file.filename.endswith('.csv'):  
-        raise HTTPException(status_code=400, detail="Only CSV files are supported")  
       
-    # Save uploaded file temporarily  
-    with tempfile.NamedTemporaryFile(mode='wb', suffix='.csv', delete=False) as tmp_file:  
-        content = await file.read()  
-        tmp_file.write(content)  
-        tmp_file_path = tmp_file.name  
-      
-    try:  
-        # Execute complete mining pipeline with config/schema  
-        result = await orchestration_service.execute_mining_pipeline(  
-            csv_file_path=tmp_file_path,  
+    # Save uploaded files to temporary directory  
+    with tempfile.TemporaryDirectory() as temp_dir:  
+        csv_files = []  
+        for file in files:  
+            file_path = os.path.join(temp_dir, file.filename)  
+            with open(file_path, "wb") as f:  
+                content = await file.read()  
+                f.write(content)  
+            csv_files.append(file_path)  
+          
+        # Use first CSV file for processing  
+        csv_file_path = csv_files[0]  
+          
+        # Generate NetworkX graph  
+        networkx_result = await orchestration_service._generate_networkx(  
+            csv_file_path=csv_file_path,  
             config=config,  
             schema_json=schema_json,  
-            tenant_id=tenant_id,  
-            session_id=session_id  
+            writer_type=writer_type  # Pass the writer_type  
         )  
-        return result  
-    finally:  
-        # Cleanup temporary file  
-        os.unlink(tmp_file_path)  
+          
+        # Mine motifs  
+        motifs = await orchestration_service._mine_motifs(  
+            networkx_result["networkx_file"]  
+        )  
+          
+        return {  
+            "job_id": networkx_result["job_id"],  
+            "motifs": motifs,  
+            "status": "success"  
+        }
   
 @router.post("/select-motif")  
 async def select_motif(  
