@@ -1,6 +1,6 @@
 services:  
   integration-service:  
-    build:     
+    build:         
       context: ./integration_service  
       dockerfile: Dockerfile  
     container_name: neurograph-ai-assistant-integration-service  
@@ -20,7 +20,7 @@ services:
       - shared_output:/shared/output  
       - csv_cache:/tmp/csv_cache  
     networks:  
-      - atomspace-network  
+      - custom-atomspace-builder_atomspace-network  
     restart: always  
   
   neural-miner:  
@@ -29,7 +29,7 @@ services:
     volumes:  
       - shared_output:/shared/output  
     networks:  
-      - atomspace-network  
+      - custom-atomspace-builder_atomspace-network  
     restart: always  
   
 volumes:  
@@ -37,5 +37,5 @@ volumes:
   csv_cache:  
   
 networks:  
-  atomspace-network:  
+  custom-atomspace-builder_atomspace-network:  
     external: true
