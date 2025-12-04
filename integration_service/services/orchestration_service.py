@@ -4,6 +4,7 @@ import uuid
 import httpx  
 import tempfile  
 import shutil
+import json
 from typing import Dict, Any, List  
 from .miner_service import MinerService  
 from ..config.settings import settings  
@@ -23,6 +24,7 @@ class OrchestrationService:
         config: str,
         schema_json: str,
         writer_type: str,
+        graph_type: str = "directed",
         tenant_id: str = "default"
     ) -> Dict[str, Any]:
         """Generate NetworkX graph from CSV files."""
@@ -48,6 +50,7 @@ class OrchestrationService:
                         'config': config,  
                         'schema_json': schema_json,  
                         'writer_type': writer_type,  
+                        'graph_type': graph_type,
                         'tenant_id': tenant_id  
                     }  
                         
@@ -107,6 +110,29 @@ class OrchestrationService:
             }
         except Exception as e:
             return {"status": "error", "error": str(e)}
+    
+    async def get_graph_type_from_metadata(self, job_id: str) -> str:
+        """Read graph_type from networkx_metadata.json"""
+        metadata_path = f"/shared/output/{job_id}/networkx_metadata.json"
+        
+        if not os.path.exists(metadata_path):
+            raise FileNotFoundError(
+                f"NetworkX metadata not found for job_id: {job_id}. "
+                f"Please ensure the NetworkX graph was generated successfully."
+            )
+        
+        try:
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+            
+            graph_type = metadata.get('graph_type', 'directed')
+            print(f"Auto-detected graph_type='{graph_type}' from metadata for job_id={job_id}")
+            return graph_type
+            
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid metadata file for job_id: {job_id}: {str(e)}")
+        except Exception as e:
+            raise RuntimeError(f"Error reading metadata for job_id: {job_id}: {str(e)}")
     
     def _copy_to_local_output(self, job_id: str) -> Dict[str, str]:
         """Copy results from shared volume to local directory and return paths."""

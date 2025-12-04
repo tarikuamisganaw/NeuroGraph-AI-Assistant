@@ -14,7 +14,8 @@ async def generate_graph(
     files: List[UploadFile] = File(...),  
     config: str = Form(...),  
     schema_json: str = Form(...),  
-    writer_type: str = Form("networkx")  
+    writer_type: str = Form("networkx"),
+    graph_type: str = Form("directed")
 ):  
     """Generate NetworkX graph from CSV files."""  
     # Validate all files are CSV  
@@ -39,6 +40,7 @@ async def generate_graph(
             config=config,
             schema_json=schema_json,
             writer_type=writer_type,
+            graph_type=graph_type,
             tenant_id="default"
         )
           
@@ -58,12 +60,15 @@ async def mine_patterns(
     max_neighborhood_size: int = Form(10),
     n_neighborhoods: int = Form(2000),
     n_trials: int = Form(100),
-    radius: int = Form(3),
-    graph_type: str = Form("directed"),
+    graph_type: str = Form(None),
     search_strategy: str = Form("greedy"),
     sample_method: str = Form("tree")
 ):
     """ Mine patterns from NetworkX graph with custom configuration."""
+    
+    # Auto-detect graph_type from metadata if not provided
+    if graph_type is None:
+        graph_type = await orchestration_service.get_graph_type_from_metadata(job_id)
     
     mining_config = {
         'min_pattern_size': min_pattern_size,
@@ -72,7 +77,6 @@ async def mine_patterns(
         'max_neighborhood_size': max_neighborhood_size,
         'n_neighborhoods': n_neighborhoods,
         'n_trials': n_trials,
-        'radius': radius,
         'graph_type': graph_type,
         'search_strategy': search_strategy,
         'sample_method': sample_method
