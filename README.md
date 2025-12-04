@@ -158,8 +158,7 @@ custom-atomspace-builder-hugegraph-1          Up
 curl http://localhost:9000/health
 
 # Check Custom AtomSpace Builder (Port 8000)
-curl http://localhost:8000/health
-
+curl http://localhost:8000/api/health
 # Expected outputs:
 # {"status": "healthy", "service": "integration-service"}
 # {"status": "healthy"}
@@ -190,13 +189,7 @@ curl http://localhost:8000/health
 **Example:**
 
 ```bash
-curl -X POST "http://localhost:9000/api/generate-graph" \
-  -F "files=@nodes.csv" \
-  -F "files=@edges.csv" \
-  -F 'config={"version":"1.0","vertices":[{"label":"person"}],"edges":[{"label":"knows"}]}' \
-  -F 'schema_json={"nodes":[{"label":"person","properties":["name"]}],"edges":[{"label":"knows"}]}' \
-  -F "writer_type=networkx" \
-  -F "graph_type=directed"
+curl -X POST "http://localhost:9000/api/generate-graph" -F "files=@data.csv" -F "files=@edges.csv" -F "config=$(cat config.json)" -F "schema_json=$(cat schema.json)" -F "writer_type=networkx" -F "graph_type=undirected"
 ```
 
 **Response:**
@@ -237,20 +230,13 @@ curl -X POST "http://localhost:9000/api/generate-graph" \
 **Example (Minimal - uses defaults):**
 
 ```bash
-curl -X POST "http://localhost:9000/api/mine-patterns" \
-  -F "job_id=abc-123-def-456"
+curl -X POST "http://localhost:9000/api/mine-patterns" -F "job_id=abc-123-def-456"
 ```
 
 **Example (Custom Configuration):**
 
 ```bash
-curl -X POST "http://localhost:9000/api/mine-patterns" \
-  -F "job_id=abc-123-def-456" \
-  -F "min_pattern_size=3" \
-  -F "max_pattern_size=8" \
-  -F "n_neighborhoods=1000" \
-  -F "n_trials=50" \
-  -F "search_strategy=greedy"
+curl -X POST "http://localhost:9000/api/mine-patterns" -F "job_id=abc-123-def-456" -F "min_pattern_size=3" -F "max_pattern_size=8" -F "n_neighborhoods=1000" -F "n_trials=50" -F "search_strategy=greedy"
 ```
 
 **Response:**

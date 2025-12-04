@@ -26,3 +26,11 @@ cache/
   
 # Docker  
 .dockerignore
+
+# Project Output Directories
+integration_service/output/
+submodules/neural-subgraph-matcher-miner/output/
+output/
+*.pkl
+*.gpickle
+networkx_metadata.json

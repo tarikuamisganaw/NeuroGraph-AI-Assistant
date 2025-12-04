@@ -40,7 +40,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ./submodules/custom-atomspace-builder/output
+      device: ${PWD}/submodules/custom-atomspace-builder/output
   csv_cache:
 
 networks:
