@@ -241,15 +241,39 @@ curl -X POST "http://localhost:9000/api/mine-patterns" -F "job_id=abc-123-def-45
 
 **Response:**
 
-```json
 {
   "job_id": "abc-123-def-456",
   "status": "success",
   "output_paths": {
     "results": "./integration_service/output/abc-123-def-456/results",
     "plots": "./integration_service/output/abc-123-def-456/plots"
-  }
+  },
+  "download_url": "http://localhost:9000/api/download-result?job_id=abc-123-def-456"
 }
+```
+---
+
+### 3️. Download Results
+
+**Endpoint:** `GET /api/download-result`
+
+**Purpose:** Securely download results. Can download a specific file OR the entire job folder as a ZIP archive.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `job_id` | String | Yes | Job ID from Step 1 |
+| `filename` | String | No | Path to specific file. **If omitted, downloads the full job as ZIP.** |
+
+**Example:**
+
+```bash
+# Download the mined results 
+curl -O -J "http://localhost:9000/api/download-result?job_id=abc-123"
+
+# Download specific file
+curl -O "http://localhost:9000/api/download-result?job_id=abc-123&filename=results/patterns.json"
 ```
 
 ---

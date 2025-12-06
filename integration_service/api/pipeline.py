@@ -3,6 +3,7 @@ import os
 import tempfile  
 from typing import List  
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException  
+from fastapi.responses import FileResponse
 from ..services.orchestration_service import OrchestrationService  
 from ..config.settings import settings  
   
@@ -88,3 +89,30 @@ async def mine_patterns(
     )
     
     return result
+
+@router.get("/download-result")
+async def download_result(job_id: str, filename: str = None):
+    try:
+        if filename:
+            # Download specific file
+            file_path = orchestration_service.get_result_file_path(job_id, filename)
+            return FileResponse(
+                path=file_path,
+                filename=os.path.basename(file_path),
+                media_type='application/octet-stream'
+            )
+        else:
+            # Download entire job as ZIP
+            zip_path = orchestration_service.create_job_archive(job_id)
+            return FileResponse(
+                path=zip_path,
+                filename=f"{job_id}.zip",
+                media_type='application/zip'
+            )
+            
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

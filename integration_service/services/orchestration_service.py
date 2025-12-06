@@ -103,10 +103,13 @@ class OrchestrationService:
             
             local_paths = self._copy_to_local_output(job_id)
             
+            download_url = f"http://localhost:9000/api/download-result?job_id={job_id}"
+            
             return {
                 "job_id": job_id,
                 "status": "success",
-                "output_paths": local_paths
+                "output_paths": local_paths,
+                "download_url": download_url
             }
         except Exception as e:
             return {"status": "error", "error": str(e)}
@@ -159,3 +162,31 @@ class OrchestrationService:
             "results": f"./integration_service/output/{job_id}/results",
             "plots": f"./integration_service/output/{job_id}/plots"
         }
+
+    def get_result_file_path(self, job_id: str, filename: str) -> str:
+    
+        job_dir = os.path.abspath(os.path.join(self.local_output_dir, job_id))
+        file_path = os.path.abspath(os.path.join(job_dir, filename))
+        
+        if not file_path.startswith(job_dir):
+            raise PermissionError("Access denied: Invalid file path")
+            
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"File not found: {filename}")
+            
+        return file_path
+
+    def create_job_archive(self, job_id: str) -> str:
+        """
+        Create a zip archive of the entire job directory.
+        """
+        job_dir = os.path.join(self.local_output_dir, job_id)
+        if not os.path.exists(job_dir):
+            raise FileNotFoundError(f"Job directory not found: {job_id}")
+        
+        zip_base_name = os.path.join(self.local_output_dir, f"{job_id}")
+        zip_file_path = f"{zip_base_name}.zip"
+        
+        shutil.make_archive(zip_base_name, 'zip', job_dir)
+        
+        return zip_file_path
